@@ -7,34 +7,23 @@ import {Hooks} from "@uniswap/v4-core/contracts/libraries/Hooks.sol";
 import {BaseHook} from "../../BaseHook.sol";
 import {Fees} from "@uniswap/v4-core/contracts/libraries/Fees.sol";
 import {IUniUSD} from "../../interfaces/IUniUSD.sol";
+import {IOracle} from "../../interfaces/IOracle.sol";
 import {BalanceDelta} from "@uniswap/v4-core/contracts/types/BalanceDelta.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IStableMinter} from "../../interfaces/IStableMinter.sol";
 
 
-
-contract StableMinter is BaseHook, IDynamicFeeManager, Ownable {
+contract StableMinter is BaseHook, IDynamicFeeManager, IStableMinter, Ownable {
     using Fees for uint24;
 
-    error PositionsMustBeFullRange();
-    error PoolMustLockLiquidity();
-    error MustUseDynamicFee();
-
-    event SetOracle(address indexed newOracle);
-
-    uint32 deployTimestamp;
     address uniusd;
     IOracle public oracle;
 
 
-    constructor(IPoolManager _poolManager, address _uniusd) BaseHook(_poolManager) {
-        deployTimestamp = _blockTimestamp();
+    constructor(IPoolManager _poolManager, address _uniusd, address oracle) BaseHook(_poolManager) {
         uniusd = _uniusd;
-    }
-
-    function getFee(IPoolManager.PoolKey calldata) external view returns (uint24) {
-        uint24 startingFee = 3000;
-        uint32 lapsed = _blockTimestamp() - deployTimestamp;
-        return startingFee + (uint24(lapsed) * 100) / 60; // 100 bps a minute
+        _setOracle(oracle);
+        emit SetOracle(oracle);
     }
 
     /// @dev For mocking
@@ -54,11 +43,11 @@ contract StableMinter is BaseHook, IDynamicFeeManager, Ownable {
     function getHooksCalls() public pure override returns (Hooks.Calls memory) {
         return Hooks.Calls({
             beforeInitialize: true,
-            afterInitialize: false,
-            beforeModifyPosition: false,
-            afterModifyPosition: false,
-            beforeSwap: false,
-            afterSwap: false,
+            afterInitialize: true,
+            beforeModifyPosition: true,
+            afterModifyPosition: true,
+            beforeSwap: true,
+            afterSwap: true,
             beforeDonate: false,
             afterDonate: false
         });
