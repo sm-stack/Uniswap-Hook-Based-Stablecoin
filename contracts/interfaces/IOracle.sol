@@ -2,25 +2,12 @@
 
 pragma solidity ^0.8.19;
 
-interface IOracle{
-    function getPrice(address) external view returns (uint64, uint64, uint256, uint256);
+interface IOracle {
 
-    function decimals() external pure returns (uint8);
+    error PriceOutOfRange();
 
-    function getLatestPrice(address asset) external view returns (uint256 price);
-
-    // Struct of main contract XOracle
-    struct Price{
-        address asset;
-        uint64 timestamp;
-        uint64 prev_timestamp;
-        uint256 price;
-        uint256 prev_price;
-    }
-
-    struct NewPrice{
-        address asset;
-        uint64 timestamp;
-        uint256 price;
-    }
+    function getMaExpTime() external view returns (uint256);
+    function exp(int256) external pure returns (uint256);
+    function price() external view returns (uint256);
+    function price_w() external view returns (uint256);
 }
